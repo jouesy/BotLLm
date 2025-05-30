@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧學習客服機器人 v8.3 - 多筆清償修正版</title>
+    <style>
+        /* 基礎樣式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            height: 85vh;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+        
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+        }
+        
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+        
+        .message.bot .message-content {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: #cbd5e0;
+        }
+        
+        /* 分期試算表格樣式 */
+        .installment-table {
+            margin-top: 10px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: white;
+        }
+        
+        .installment-table th {
+            background: #4a5568;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 0.8rem;
+        }
+        
+        .installment-table td {
+            padding: 6px;
+            text-align: right;
+            border: 1px solid #ddd;
+        }
+        
+        .installment-table tr:nth-child(even) {
+            background: #f7fafc;
+        }
+        
+        .installment-table .total-row {
+            font-weight: bold;
+            background: #e2e8f0;
+        }
+        
+        /* 試算比較表格 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .comparison-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .comparison-table tr:hover {
+            background: #f0f4f8;
+        }
+        
+        /* 提前清償樣式 */
+        .prepayment-box {
+            background: #fef5e7;
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .prepayment-favorable {
+            background: #d5f4e6;
+            border-color: #27ae60;
+        }
+        
+        .prepayment-unfavorable {
+            background: #fadbd8;
+            border-color: #e74c3c;
+        }
+        
+        /* 多筆試算分隔線 */
+        .installment-separator {
+            border-top: 3px solid #667eea;
+            margin: 20px 0;
+            padding-top: 20px;
+        }
+        
+        /* 詳細檢視按鈕樣式 */
+        .detail-btn {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .detail-btn:hover {
+            background: #2c5282;
+            transform: translateY(-1px);
+        }
+        
+        /* 上次條件提示樣式 */
+        .last-condition-hint {
+            background: #bee3f8;
+            color: #2c5282;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .input-area input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .send-btn {
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .send-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        /* 其他樣式 */
+        .stats-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stats-card h3 {
+            color: #7f8c8d;
+            font-size: 0.875rem;
+            margin-bottom: 5px;
+        }
+        
+        .stats-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .training-btn {
+            width: 100%;
+            padding: 12px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .training-btn:hover {
+            background: #38a169;
+        }
+        
+        .thinking-indicator {
+            display: none;
+            padding: 10px;
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+        }
+        
+        .thinking-indicator.active {
+            display: block;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .thinking-indicator.active::after {
+            content: '...';
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左側面板：統計與控制 -->
+        <div class="panel">
+            <h2>📊 學習統計</h2>
+            
+            <div class="stats-card">
+                <h3>總對話數</h3>
+                <div class="value" id="totalConversations">0</div>
+            </div>
+            
+            <div class="stats-card">
+                <h3>知識點數量</h3>
+                <div class="value" id="knowledgeCount">0</div>
+            </div>
+            
+            <div class="stats-card">
+                <h3>上次試算條件</h3>
+                <div class="value" id="lastCalculation" style="font-size: 0.9rem;">尚無記錄</div>
+            </div>
+            
+            <button class="training-btn" onclick="showInstallmentGuide()">
+                💳 分期試算說明
+            </button>
+            <button class="training-btn" onclick="showPrepaymentGuide()">
+                💰 提前清償說明
+            </button>
+            <button class="training-btn" onclick="showSmartFeatures()">
+                🎯 智慧功能說明
+            </button>
+            <button class="training-btn" style="background: #e53e3e;" onclick="resetLearning()">
+                🔄 重置學習資料
+            </button>
+        </div>
+        
+        <!-- 中間面板：聊天介面 -->
+        <div class="panel chat-panel">
+            <h2>🤖 智慧客服助理</h2>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div>您好！我是智慧版學習助理，支援提前清償和多筆分期試算功能。<br><br>
+                        💡 新功能：<br>
+                        • 提前清償試算（含違約金計算）<br>
+                        • 多筆分期試算（含詳細明細）<br>
+                        • 智慧期數調整<br><br>
+                        💳 分期試算指令：<br>
+                        • 帳單分期：帳分 金額 期數/利率 起始月份<br>
+                        • 單筆分期：單分 金額 期數/利率 請款日 結帳日<br>
+                        • 無息分期：無分 金額 期數 起始月份<br>
+                        • 多期試算：多期試算 類型 金額 期數/利率 參數<br>
+                        • 多筆試算：多筆試算 1 類型 參數 2 類型 參數...<br><br>
+                        💰 提前清償：<br>
+                        • 單筆：類型 金額 期數/利率 參數 清償月份<br>
+                        • 多筆：清償月份+多筆清償 1 類型 參數 2 類型 參數...<br><br>
+                        輸入「說明」查看詳細使用方法。</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="thinking-indicator" id="thinkingIndicator">
+                機器人正在計算中
+            </div>
+            
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="請輸入分期試算指令或期數..." 
+                    onkeypress="handleKeyPress(event)"
+                />
+                <button class="send-btn" onclick="sendMessage()">發送</button>
+            </div>
+        </div>
+        
+        <!-- 右側面板：知識庫 -->
+        <div class="panel">
+            <h2>📚 動態知識庫</h2>
+            
+            <div style="margin-bottom: 20px;">
+                <select id="categoryFilter" onchange="displayKnowledge()" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #e2e8f0;">
+                    <option value="">所有類型</option>
+                </select>
+            </div>
+            
+            <div id="knowledgeDisplay" style="max-height: 600px; overflow-y: auto;">
+                <!-- 知識庫內容將動態顯示 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 增強版學習引擎（修正多筆清償識別問題） ==========
+        class EnhancedLearningChatbot {
+            constructor() {
+                this.knowledge = this.loadKnowledge() || {
+                    patterns: [],
+                    dataTypes: {},
+                    entities: {},
+                    responses: {},
+                    feedback: []
+                };
+                
+                this.stats = this.loadStats() || {
+                    totalConversations: 0,
+                    successfulResponses: 0,
+                    failedResponses: 0,
+                    learningProgress: 0
+                };
+                
+                this.conversationHistory = [];
+                this.debugMode = false;
+                
+                // 記憶上次試算條件
+                this.lastCalculation = this.loadLastCalculation() || null;
+                
+                // 儲存多期比較的詳細資料
+                this.lastTrialCalculations = {};
+                
+                // 違約金規則
+                this.penaltyRules = {
+                    1: 160,   // 首期結帳日後至第二期結帳日前
+                    2: 150,   // 第二期結帳日後至第六期結帳日前
+                    6: 140    // 第六期結帳日後至第十二期結帳日前
+                };
+                
+                this.initializeBaseKnowledge();
+                this.addInstallmentKnowledge();
+                
+                // 顯示上次試算條件
+                this.displayLastCalculation();
+            }
+            
+            // 新增分期試算知識
+            addInstallmentKnowledge() {
+                const installmentKnowledge = [
+                    {
+                        pattern: ['帳分', '帳單分期', '帳單分期試算'],
+                        intent: 'statement_installment',
+                        response: '帳單分期試算功能',
+                        confidence: 1,
+                        usage: 0,
+                        dataType: '分期試算',
+                        isFunction: true
+                    },
+                    {
+                        pattern: ['單分', '單筆分期', '單筆分期試算'],
+                        intent: 'single_installment',
+                        response: '單筆分期試算功能',
+                        confidence: 1,
+                        usage: 0,
+                        dataType: '分期試算',
+                        isFunction: true
+                    },
+                    {
+                        pattern: ['無分', '無息分期', '零利率', '無息分期試算'],
+                        intent: 'interest_free_installment',
+                        response: '無息分期試算功能',
+                        confidence: 1,
+                        usage: 0,
+                        dataType: '分期試算',
+                        isFunction: true
+                    },
+                    {
+                        pattern: ['多期試算', '多期比較'],
+                        intent: 'multi_period_trial',
+                        response: '多期數比較試算功能',
+                        confidence: 1,
+                        usage: 0,
+                        dataType: '分期試算',
+                        isFunction: true
+                    },
+                    {
+                        pattern: ['多筆試算', '多筆分期'],
+                        intent: 'multi_installment',
+                        response: '多筆分期試算功能',
+                        confidence: 1,
+                        usage: 0,
+                        dataType: '分期試算',
+                        isFunction: true
+                    },
+                    {
+                        pattern: ['提前清償', '清償', '違約金', '多筆清償'],
+                        intent: 'prepayment',
+                        response: '提前清償試算功能',
+                        confidence: 1,
+                        usage: 0,
+                        dataType: '分期試算',
+                        isFunction: true
+                    }
+                ];
+                
+                const existingIntents = this.knowledge.patterns.map(p => p.intent);
+                installmentKnowledge.forEach(knowledge => {
+                    if (!existingIntents.includes(knowledge.intent)) {
+                        this.knowledge.patterns.push(knowledge);
+                    }
+                });
+                
+                this.saveKnowledge();
+            }
+            
+            // 取得分期說明
+            getInstallmentHelp() {
+                return `📋 分期試算完整說明：
+
+1️⃣ 帳單分期（年金法）
+格式：帳分 金額 期數/利率 起始月份
+範例：帳分 50000 12/13.5 11401
+
+2️⃣ 單筆分期（依天計息）
+格式：單分 金額 期數/利率 請款日 結帳日
+範例：單分 30000 6/12 1140515 1140620
+
+3️⃣ 無息分期
+格式：無分 金額 期數 起始月份
+範例：無分 20000 3 11401
+
+4️⃣ 多期試算（新格式）
+格式：多期試算 類型 金額 期數/利率 參數
+範例：多期試算 帳分 50000 12/13.5 11403
+
+5️⃣ 多筆試算（含詳細明細）
+格式：多筆試算 1 類型 參數 2 類型 參數...
+範例：多筆試算 1 單分 50000 12/13.5 1140102 1140116 2 帳分 50000 24/13.5 11310
+
+🎯 智慧功能：
+• 直接輸入期數（如：24）即可使用上次條件重新計算
+• 利率後的%符號可加可不加
+
+📌 日期格式說明：
+• 民國年月：YYYMM（如 11401 = 民國114年1月）
+• 民國年月日：YYYMMDD（如 1140515 = 民國114年5月15日）`;
+            }
+            
+            // 取得提前清償說明
+            getPrepaymentHelp() {
+                return `💰 提前清償功能說明：
+
+📌 提前清償試算
+在分期指令後加上清償月份即可試算提前清償
+
+格式範例：
+• 單筆：單分 50000 12/13.5 1140214 1140216 11406
+• 帳單：帳分 50000 12/13.5 11401 11406
+
+⚠️ 違約金規則：
+• 首期後至第2期前：160元
+• 第2期後至第6期前：150元  
+• 第6期後至第12期前：140元
+• 無息分期無違約金
+
+📊 系統會計算：
+1. 剩餘本金
+2. 違約金
+3. 省下的利息（從清償期開始的所有利息）
+4. 是否有利（省下利息 > 違約金）
+
+💡 多筆提前清償：
+格式：清償月份+多筆清償 1 類型 參數 2 類型 參數...
+範例：11406多筆清償 1 帳分 50000 12/13.5 11401 2 單分 25000 24/13.5 1140204 1140216 3 無分 24000 12 11309
+
+系統會彙總所有清償金額並提供建議。`;
+            }
+            
+            // 處理使用者輸入
+            async processInput(input) {
+                this.stats.totalConversations++;
+                const startTime = Date.now();
+                
+                // 顯示思考中
+                this.showThinking(true);
+                
+                const processedInput = input.toLowerCase().trim();
+                
+                // 1. 檢查是否只輸入期數
+                const periodsOnlyPattern = /^(\d+)期?$/;
+                const periodsMatch = input.match(periodsOnlyPattern);
+                
+                if (periodsMatch && this.lastCalculation) {
+                    const newPeriods = parseInt(periodsMatch[1]);
+                    const result = this.recalculateWithNewPeriods(newPeriods);
+                    
+                    await this.simulateThinking(startTime);
+                    this.showThinking(false);
+                    
+                    return result;
+                }
+                
+                // 2. 優先檢查是否為多筆清償指令
+                const multiPrepaymentPatterns = [
+                    /(\d{5})\s*多筆清償\s+(.+)/,     // 原格式：11406多筆清償
+                    /(\d{5})多筆清償\s+(.+)/,        // 無空格格式
+                    /多筆清償\s+(\d{5})\s+(.+)/      // 反向格式：多筆清償 11406
+                ];
+                
+                let multiPrepaymentMatch = null;
+                let prepaymentMonth = null;
+                let installmentsData = null;
+                
+                for (const pattern of multiPrepaymentPatterns) {
+                    const match = input.match(pattern);
+                    if (match) {
+                        if (pattern.toString().includes('多筆清償\\s+(\\d{5})')) {
+                            // 反向格式
+                            prepaymentMonth = match[1];
+                            installmentsData = match[2];
+                        } else {
+                            // 正常格式
+                            prepaymentMonth = match[1];
+                            installmentsData = match[2];
+                        }
+                        multiPrepaymentMatch = match;
+                        break;
+                    }
+                }
+                
+                if (multiPrepaymentMatch) {
+                    const result = this.calculateMultiPrepayment(prepaymentMonth, installmentsData);
+                    
+                    await this.simulateThinking(startTime);
+                    this.showThinking(false);
+                    
+                    return result;
+                }
+                
+                // 3. 檢查是否為分期試算指令（包含提前清償）
+                const installmentResult = this.checkInstallmentCommand(input);
+                if (installmentResult) {
+                    await this.simulateThinking(startTime);
+                    this.showThinking(false);
+                    return installmentResult;
+                }
+                
+                // 4. 檢查是否為查看詳細指令
+                const detailPattern = /詳細\s*(\d+)/;
+                const detailMatch = input.match(detailPattern);
+                
+                if (detailMatch && this.lastTrialCalculations) {
+                    const periods = parseInt(detailMatch[1]);
+                    const result = this.showDetailedCalculation(periods);
+                    
+                    await this.simulateThinking(startTime);
+                    this.showThinking(false);
+                    
+                    return result;
+                }
+                
+                // 5. 其他指令處理
+                if (processedInput === '說明') {
+                    await this.simulateThinking(startTime);
+                    this.showThinking(false);
+                    return {
+                        text: this.getInstallmentHelp(),
+                        confidence: 1,
+                        intent: 'help'
+                    };
+                }
+                
+                if (processedInput.includes('提前清償') || processedInput.includes('多筆清償')) {
+                    await this.simulateThinking(startTime);
+                    this.showThinking(false);
+                    return {
+                        text: this.getPrepaymentHelp(),
+                        confidence: 1,
+                        intent: 'prepayment_help'
+                    };
+                }
+                
+                await this.simulateThinking(startTime);
+                this.showThinking(false);
+                return {
+                    text: `抱歉，我找不到關於「${input}」的相關資訊。\n\n您可以試試分期試算功能，輸入「說明」查看使用方法。`,
+                    confidence: 0,
+                    intent: 'unknown'
+                };
+            }
+            
+            // 檢查分期試算指令（修改檢查順序，優先處理多筆相關指令）
+            checkInstallmentCommand(input) {
+                // 移除 % 符號以統一處理
+                input = input.replace(/%/g, '');
+                
+                // 1. 優先檢查是否包含多筆清償關鍵字（避免被誤認為單筆分期）
+                if (input.includes('多筆清償')) {
+                    // 這是多筆清償指令，返回 null 讓 processInput 處理
+                    return null;
+                }
+                
+                // 2. 多筆試算格式
+                const multiPattern = /多筆試算\s+(.+)/;
+                const multiMatch = input.match(multiPattern);
+                
+                if (multiMatch) {
+                    const installmentsData = multiMatch[1];
+                    const result = this.calculateMultiInstallments(installmentsData);
+                    return {
+                        text: result,
+                        confidence: 1,
+                        intent: 'multi_installment_calculation'
+                    };
+                }
+                
+                // 3. 多期試算新格式：多期試算 類型 金額 期數/利率 參數
+                const multiPeriodPattern = /多期試算\s+(帳分|單分|無分)\s+(\d+)\s+(\d+)\/(\d+\.?\d*)\s*(.*)/;
+                const multiPeriodMatch = input.match(multiPeriodPattern);
+                
+                if (multiPeriodMatch) {
+                    const type = multiPeriodMatch[1];
+                    const amount = parseFloat(multiPeriodMatch[2]);
+                    const periods = parseInt(multiPeriodMatch[3]);
+                    const rate = parseFloat(multiPeriodMatch[4]);
+                    const params = multiPeriodMatch[5].trim();
+                    
+                    const result = this.performMultiPeriodTrial(type, amount, periods, rate, params);
+                    return {
+                        text: result,
+                        confidence: 1,
+                        intent: 'multi_period_trial_calculation'
+                    };
+                }
+                
+                // 4. 帳單分期格式（含提前清償）：帳分 金額 期數/利率 起始月份 [清償月份]
+                const statementPattern = /帳分\s+(\d+)\s+(\d+)\/(\d+\.?\d*)\s+(\d{5})(?:\s+(\d{5}))?/;
+                const statementMatch = input.match(statementPattern);
+                
+                if (statementMatch) {
+                    const plan = {
+                        loanAmount: parseFloat(statementMatch[1]),
+                        numberOfInstallments: parseInt(statementMatch[2]),
+                        annualInterestRate: parseFloat(statementMatch[3]),
+                        statementPlanStartBillROC: statementMatch[4],
+                        type: 'statement',
+                        prepaymentMonth: statementMatch[5] || null
+                    };
+                    
+                    if (plan.prepaymentMonth) {
+                        const result = this.calculatePrepayment(plan);
+                        return {
+                            text: result,
+                            confidence: 1,
+                            intent: 'statement_prepayment_calculation'
+                        };
+                    } else {
+                        this.saveLastCalculation(plan);
+                        const result = this.calculateInstallmentPlan(plan);
+                        return {
+                            text: result,
+                            confidence: 1,
+                            intent: 'statement_installment_calculation'
+                        };
+                    }
+                }
+                
+                // 5. 單筆分期格式（含提前清償）：單分 金額 期數/利率 請款日 結帳日 [清償月份]
+                const singlePattern = /單分\s+(\d+)\s+(\d+)\/(\d+\.?\d*)\s+(\d{7})\s+(\d{7})(?:\s+(\d{5}))?/;
+                const singleMatch = input.match(singlePattern);
+                
+                if (singleMatch) {
+                    const plan = {
+                        loanAmount: parseFloat(singleMatch[1]),
+                        numberOfInstallments: parseInt(singleMatch[2]),
+                        annualInterestRate: parseFloat(singleMatch[3]),
+                        merchantBillingDateROC: singleMatch[4],
+                        firstPaymentBillDateROC: singleMatch[5],
+                        type: 'single',
+                        prepaymentMonth: singleMatch[6] || null
+                    };
+                    
+                    if (plan.prepaymentMonth) {
+                        const result = this.calculatePrepayment(plan);
+                        return {
+                            text: result,
+                            confidence: 1,
+                            intent: 'single_prepayment_calculation'
+                        };
+                    } else {
+                        this.saveLastCalculation(plan);
+                        const result = this.calculateInstallmentPlan(plan);
+                        return {
+                            text: result,
+                            confidence: 1,
+                            intent: 'single_installment_calculation'
+                        };
+                    }
+                }
+                
+                // 6. 無息分期格式（含提前清償）：無分 金額 期數 起始月份 [清償月份]
+                const freePattern = /無分\s+(\d+)\s+(\d+)\s+(\d{5})(?:\s+(\d{5}))?/;
+                const freeMatch = input.match(freePattern);
+                
+                if (freeMatch) {
+                    const plan = {
+                        loanAmount: parseFloat(freeMatch[1]),
+                        numberOfInstallments: parseInt(freeMatch[2]),
+                        annualInterestRate: 0,
+                        statementPlanStartBillROC: freeMatch[3],
+                        type: 'interestFree',
+                        prepaymentMonth: freeMatch[4] || null
+                    };
+                    
+                    if (plan.prepaymentMonth) {
+                        const result = this.calculatePrepayment(plan);
+                        return {
+                            text: result,
+                            confidence: 1,
+                            intent: 'interest_free_prepayment_calculation'
+                        };
+                    } else {
+                        this.saveLastCalculation(plan);
+                        const result = this.calculateInstallmentPlan(plan);
+                        return {
+                            text: result,
+                            confidence: 1,
+                            intent: 'interest_free_installment_calculation'
+                        };
+                    }
+                }
+                
+                return null;
+            }
+            
+            // 計算提前清償
+            calculatePrepayment(plan) {
+                // 先計算完整的分期計畫
+                this.calculateAmortization(plan);
+                
+                // 找出清償月份對應的期數
+                const prepaymentPeriod = this.findPrepaymentPeriod(plan, plan.prepaymentMonth);
+                
+                if (!prepaymentPeriod || prepaymentPeriod > plan.numberOfInstallments) {
+                    return `❌ 錯誤：清償月份 ${plan.prepaymentMonth} 不在分期範圍內。`;
+                }
+                
+                // 計算提前清償資訊
+                const prepaymentInfo = this.calculatePrepaymentInfo(plan, prepaymentPeriod);
+                
+                // 格式化回應
+                let response = this.formatPrepaymentResponse(plan, prepaymentInfo);
+                
+                return response;
+            }
+            
+            // 找出清償月份對應的期數
+            findPrepaymentPeriod(plan, prepaymentMonth) {
+                for (let i = 0; i < plan.amortizationSchedule.length; i++) {
+                    if (plan.amortizationSchedule[i].billROCYearMonth === prepaymentMonth) {
+                        return i + 1;
+                    }
+                }
+                return null;
+            }
+            
+            // 計算提前清償資訊（修正版）
+            calculatePrepaymentInfo(plan, prepaymentPeriod) {
+                const info = {
+                    prepaymentPeriod: prepaymentPeriod,
+                    remainingPrincipal: 0,
+                    penaltyFee: 0,
+                    savedInterest: 0,
+                    totalPrepaymentAmount: 0,
+                    isFavorable: false
+                };
+                
+                // 計算剩餘本金
+                // 如果是在第N期清償，要清償的是第N-1期結束後的剩餘本金
+                if (prepaymentPeriod > 1) {
+                    info.remainingPrincipal = plan.amortizationSchedule[prepaymentPeriod - 2].remainingBalance;
+                } else {
+                    // 第1期清償時，剩餘本金就是全部本金
+                    info.remainingPrincipal = plan.loanAmount;
+                }
+                
+                // 計算違約金（無息分期無違約金）
+                if (plan.annualInterestRate > 0 && (plan.type === 'single' || plan.type === 'statement')) {
+                    if (prepaymentPeriod <= 1) {
+                        info.penaltyFee = this.penaltyRules[1];
+                    } else if (prepaymentPeriod <= 6) {
+                        info.penaltyFee = this.penaltyRules[2];
+                    } else if (prepaymentPeriod <= 12) {
+                        info.penaltyFee = this.penaltyRules[6];
+                    }
+                }
+                
+                // 修正：計算省下的利息
+                // 從清償期開始（含清償期）到最後一期的所有利息
+                for (let i = prepaymentPeriod - 1; i < plan.amortizationSchedule.length; i++) {
+                    info.savedInterest += plan.amortizationSchedule[i].interest;
+                }
+                
+                // 計算總清償金額
+                info.totalPrepaymentAmount = info.remainingPrincipal + info.penaltyFee;
+                
+                // 判斷是否有利
+                info.isFavorable = info.savedInterest > info.penaltyFee;
+                
+                return info;
+            }
+            
+            // 格式化提前清償回應（修正版）
+            formatPrepaymentResponse(plan, info) {
+                let typeText = '';
+                if (plan.type === 'statement') typeText = '帳單分期';
+                else if (plan.type === 'single') typeText = '單筆分期';
+                else if (plan.type === 'interestFree') typeText = '無息分期';
+                
+                let response = `💰 ${typeText}提前清償試算結果\n\n`;
+                
+                response += `📊 分期資訊：\n`;
+                response += `本金：$${this.formatNumber(plan.loanAmount)}\n`;
+                response += `年利率：${plan.annualInterestRate}%\n`;
+                response += `總期數：${plan.numberOfInstallments}期\n`;
+                response += `清償時點：第${info.prepaymentPeriod}期帳單月份\n\n`;
+                
+                response += `💵 清償計算：\n`;
+                response += `剩餘本金：$${this.formatNumber(info.remainingPrincipal)}\n`;
+                
+                if (info.penaltyFee > 0) {
+                    response += `違約金：$${this.formatNumber(info.penaltyFee)}\n`;
+                    response += `總清償金額：$${this.formatNumber(info.totalPrepaymentAmount)}\n\n`;
+                    
+                    response += `💡 效益分析：\n`;
+                    response += `省下利息（第${info.prepaymentPeriod}期～第${plan.numberOfInstallments}期）：$${this.formatNumber(info.savedInterest)}\n`;
+                    response += `扣除違約金後淨省：$${this.formatNumber(info.savedInterest - info.penaltyFee)}\n\n`;
+                    
+                    if (info.isFavorable) {
+                        response += `<div class="prepayment-box prepayment-favorable">`;
+                        response += `✅ 建議：提前清償【有利】\n`;
+                        response += `省下的利息（$${this.formatNumber(info.savedInterest)}）大於違約金（$${this.formatNumber(info.penaltyFee)}）\n`;
+                        response += `您可節省 $${this.formatNumber(info.savedInterest - info.penaltyFee)}`;
+                        response += `</div>`;
+                    } else {
+                        response += `<div class="prepayment-box prepayment-unfavorable">`;
+                        response += `❌ 建議：提前清償【不利】\n`;
+                        response += `省下的利息（$${this.formatNumber(info.savedInterest)}）小於違約金（$${this.formatNumber(info.penaltyFee)}）\n`;
+                        response += `您將多付 $${this.formatNumber(info.penaltyFee - info.savedInterest)}`;
+                        response += `</div>`;
+                    }
+                } else {
+                    // 無息分期
+                    response += `違約金：$0（無息分期免違約金）\n`;
+                    response += `總清償金額：$${this.formatNumber(info.totalPrepaymentAmount)}\n\n`;
+                    
+                    response += `<div class="prepayment-box prepayment-favorable">`;
+                    response += `✅ 無息分期可隨時清償，無需支付違約金`;
+                    response += `</div>`;
+                }
+                
+                response += `\n⚠️ 重要提醒：\n`;
+                response += `• 清償金額將列入第${info.prepaymentPeriod}期帳單最低應繳\n`;
+                response += `• 需一次繳清，無法分期\n`;
+                response += `• 提前清償申請後無法取消\n`;
+                
+                if (!info.isFavorable && info.penaltyFee > 0) {
+                    response += `\n是否仍要繼續申請提前清償？`;
+                }
+                
+                return response;
+            }
+            
+            // 計算多筆分期（修正：加入詳細結果）
+            calculateMultiInstallments(installmentsData) {
+                const installments = this.parseMultiInstallments(installmentsData);
+                
+                if (installments.length === 0) {
+                    return `❌ 無法解析多筆分期資料，請檢查格式。`;
+                }
+                
+                let response = `📊 多筆分期試算結果\n\n`;
+                let totalAmount = 0;
+                let totalInterest = 0;
+                let totalPayment = 0;
+                
+                // 第一部分：摘要
+                response += `📌 摘要資訊：\n`;
+                installments.forEach((installment, index) => {
+                    // 計算此筆分期
+                    this.calculateAmortization(installment.plan);
+                    
+                    response += `【第${index + 1}筆】${installment.typeText}：`;
+                    response += `$${this.formatNumber(installment.plan.loanAmount)} / `;
+                    response += `${installment.plan.numberOfInstallments}期 / `;
+                    response += `${installment.plan.annualInterestRate}%\n`;
+                    
+                    totalAmount += installment.plan.loanAmount;
+                    totalInterest += installment.plan.totalCalculatedInterest;
+                    totalPayment += installment.plan.loanAmount + installment.plan.totalCalculatedInterest;
+                });
+                
+                response += `\n📌 彙總：\n`;
+                response += `總本金：$${this.formatNumber(totalAmount)}\n`;
+                response += `總利息：$${this.formatNumber(totalInterest)}\n`;
+                response += `總付款：$${this.formatNumber(totalPayment)}\n`;
+                
+                // 第二部分：各筆詳細資料
+                response += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                response += `📋 各筆分期詳細明細\n`;
+                response += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                
+                installments.forEach((installment, index) => {
+                    if (index > 0) {
+                        response += `<div class="installment-separator"></div>`;
+                    }
+                    
+                    response += `\n【第${index + 1}筆】${installment.typeText}\n`;
+                    response += this.formatInstallmentResponse(installment.plan);
+                    response += `\n`;
+                });
+                
+                return response;
+            }
+            
+            // 計算多筆提前清償
+            calculateMultiPrepayment(prepaymentMonth, installmentsData) {
+                const installments = this.parseMultiInstallments(installmentsData);
+                
+                if (installments.length === 0) {
+                    return {
+                        text: `❌ 無法解析多筆清償資料，請檢查格式。`,
+                        confidence: 1,
+                        intent: 'multi_prepayment_error'
+                    };
+                }
+                
+                let response = `💰 多筆提前清償試算結果（清償月份：${prepaymentMonth}）\n\n`;
+                let totalPrepaymentAmount = 0;
+                let totalPenalty = 0;
+                let totalSavedInterest = 0;
+                let detailsArray = [];
+                
+                installments.forEach((installment, index) => {
+                    // 加入清償月份
+                    installment.plan.prepaymentMonth = prepaymentMonth;
+                    
+                    // 計算分期
+                    this.calculateAmortization(installment.plan);
+                    
+                    // 找出清償期數
+                    const prepaymentPeriod = this.findPrepaymentPeriod(installment.plan, prepaymentMonth);
+                    
+                    if (!prepaymentPeriod || prepaymentPeriod > installment.plan.numberOfInstallments) {
+                        detailsArray.push({
+                            index: index + 1,
+                            typeText: installment.typeText,
+                            error: true,
+                            message: `清償月份不在分期範圍內`
+                        });
+                        return;
+                    }
+                    
+                    // 計算提前清償資訊
+                    const prepaymentInfo = this.calculatePrepaymentInfo(installment.plan, prepaymentPeriod);
+                    
+                    detailsArray.push({
+                        index: index + 1,
+                        typeText: installment.typeText,
+                        plan: installment.plan,
+                        info: prepaymentInfo,
+                        error: false
+                    });
+                    
+                    totalPrepaymentAmount += prepaymentInfo.totalPrepaymentAmount;
+                    totalPenalty += prepaymentInfo.penaltyFee;
+                    totalSavedInterest += prepaymentInfo.savedInterest;
+                });
+                
+                // 顯示各筆明細
+                detailsArray.forEach(detail => {
+                    response += `【第${detail.index}筆】${detail.typeText}\n`;
+                    
+                    if (detail.error) {
+                        response += `❌ ${detail.message}\n\n`;
+                    } else {
+                        response += `本金：$${this.formatNumber(detail.plan.loanAmount)}\n`;
+                        response += `剩餘本金：$${this.formatNumber(detail.info.remainingPrincipal)}\n`;
+                        
+                        if (detail.info.penaltyFee > 0) {
+                            response += `違約金：$${this.formatNumber(detail.info.penaltyFee)}\n`;
+                            response += `省下利息：$${this.formatNumber(detail.info.savedInterest)}\n`;
+                            response += detail.info.isFavorable ? `✅ 有利` : `❌ 不利`;
+                            response += `（淨省 $${this.formatNumber(detail.info.savedInterest - detail.info.penaltyFee)}）\n`;
+                        } else {
+                            response += `違約金：$0（無息分期）\n`;
+                        }
+                        
+                        response += `小計：$${this.formatNumber(detail.info.totalPrepaymentAmount)}\n\n`;
+                    }
+                });
+                
+                // 彙總
+                response += `📌 清償彙總：\n`;
+                response += `總清償本金：$${this.formatNumber(totalPrepaymentAmount - totalPenalty)}\n`;
+                response += `總違約金：$${this.formatNumber(totalPenalty)}\n`;
+                response += `總清償金額：$${this.formatNumber(totalPrepaymentAmount)}\n\n`;
+                
+                response += `💡 效益分析：\n`;
+                response += `總省利息：$${this.formatNumber(totalSavedInterest)}\n`;
+                response += `扣除違約金後淨省：$${this.formatNumber(totalSavedInterest - totalPenalty)}\n\n`;
+                
+                if (totalSavedInterest > totalPenalty) {
+                    response += `<div class="prepayment-box prepayment-favorable">`;
+                    response += `✅ 整體建議：提前清償【有利】\n`;
+                    response += `總計可節省 $${this.formatNumber(totalSavedInterest - totalPenalty)}`;
+                    response += `</div>`;
+                } else if (totalPenalty > 0) {
+                    response += `<div class="prepayment-box prepayment-unfavorable">`;
+                    response += `❌ 整體建議：提前清償【不利】\n`;
+                    response += `將多付 $${this.formatNumber(totalPenalty - totalSavedInterest)}`;
+                    response += `</div>`;
+                }
+                
+                response += `\n⚠️ 重要提醒：\n`;
+                response += `• 總清償金額 $${this.formatNumber(totalPrepaymentAmount)} 將列入下期帳單\n`;
+                response += `• 需一次繳清，無法分期\n`;
+                response += `• 申請後無法取消`;
+                
+                return {
+                    text: response,
+                    confidence: 1,
+                    intent: 'multi_prepayment_calculation'
+                };
+            }
+            
+            // 解析多筆分期資料
+            parseMultiInstallments(data) {
+                const installments = [];
+                
+                // 解析格式：1 單分 50000 12/13.5 1140102 1140116 2 帳分 50000 24/13.5 11310
+                const parts = data.trim().split(/\s+/);
+                let i = 0;
+                
+                while (i < parts.length) {
+                    if (/^\d+$/.test(parts[i])) {
+                        // 找到序號
+                        i++; // 跳過序號
+                        
+                        if (i >= parts.length) break;
+                        
+                        const type = parts[i++];
+                        let plan = null;
+                        let typeText = '';
+                        
+                        if (type === '單分' && i + 4 < parts.length) {
+                            const amount = parseFloat(parts[i++]);
+                            const [periods, rate] = parts[i++].split('/');
+                            const merchantDate = parts[i++];
+                            const billDate = parts[i++];
+                            
+                            plan = {
+                                loanAmount: amount,
+                                numberOfInstallments: parseInt(periods),
+                                annualInterestRate: parseFloat(rate),
+                                merchantBillingDateROC: merchantDate,
+                                firstPaymentBillDateROC: billDate,
+                                type: 'single'
+                            };
+                            typeText = '單筆分期';
+                        } else if (type === '帳分' && i + 2 < parts.length) {
+                            const amount = parseFloat(parts[i++]);
+                            const [periods, rate] = parts[i++].split('/');
+                            const startMonth = parts[i++];
+                            
+                            plan = {
+                                loanAmount: amount,
+                                numberOfInstallments: parseInt(periods),
+                                annualInterestRate: parseFloat(rate),
+                                statementPlanStartBillROC: startMonth,
+                                type: 'statement'
+                            };
+                            typeText = '帳單分期';
+                        } else if ((type === '無分' || type === '無息') && i + 2 < parts.length) {
+                            const amount = parseFloat(parts[i++]);
+                            const periods = parseInt(parts[i++]);
+                            const startMonth = parts[i++];
+                            
+                            plan = {
+                                loanAmount: amount,
+                                numberOfInstallments: periods,
+                                annualInterestRate: 0,
+                                statementPlanStartBillROC: startMonth,
+                                type: 'interestFree'
+                            };
+                            typeText = '無息分期';
+                        }
+                        
+                        if (plan) {
+                            installments.push({ plan, typeText });
+                        }
+                    } else {
+                        i++;
+                    }
+                }
+                
+                return installments;
+            }
+            
+            // 執行多期試算（新格式）
+            performMultiPeriodTrial(type, amount, basePeriods, rate, params) {
+                const trialPeriods = [3, 6, 12, 18, 24, 30];
+                
+                // 清空之前的試算資料
+                this.lastTrialCalculations = {};
+                
+                let response = `📊 多期數比較試算結果\n`;
+                response += `類型：${type === '帳分' ? '帳單分期' : type === '單分' ? '單筆分期' : '無息分期'}\n`;
+                response += `本金：$${this.formatNumber(amount)}\n`;
+                response += `年利率：${rate}%\n\n`;
+                
+                response += `<table class="comparison-table">`;
+                response += `<tr><th>期數</th><th>每期金額</th><th>總利息</th><th>總付款</th><th>操作</th></tr>`;
+                
+                trialPeriods.forEach(periods => {
+                    let plan = {
+                        loanAmount: amount,
+                        numberOfInstallments: periods,
+                        annualInterestRate: rate,
+                        amortizationSchedule: []
+                    };
+                    
+                    // 根據類型設定參數
+                    if (type === '帳分') {
+                        plan.type = 'statement';
+                        plan.statementPlanStartBillROC = params || '11401';
+                    } else if (type === '單分') {
+                        plan.type = 'single';
+                        const dates = params.split(/\s+/);
+                        plan.merchantBillingDateROC = dates[0] || '1140515';
+                        plan.firstPaymentBillDateROC = dates[1] || '1140620';
+                    } else if (type === '無分') {
+                        plan.type = 'interestFree';
+                        plan.annualInterestRate = 0;
+                        plan.statementPlanStartBillROC = params || '11401';
+                    }
+                    
+                    try {
+                        this.calculateAmortization(plan);
+                        
+                        // 儲存詳細計算結果
+                        this.lastTrialCalculations[periods] = plan;
+                        
+                        // 計算平均每期金額
+                        const avgPayment = Math.round((plan.loanAmount + plan.totalCalculatedInterest) / periods);
+                        
+                        response += `<tr>`;
+                        response += `<td>${periods}期</td>`;
+                        response += `<td>$${this.formatNumber(avgPayment)}</td>`;
+                        response += `<td>$${this.formatNumber(plan.totalCalculatedInterest)}</td>`;
+                        response += `<td>$${this.formatNumber(plan.loanAmount + plan.totalCalculatedInterest)}</td>`;
+                        response += `<td><button class="detail-btn" onclick="sendDetailCommand(${periods})">詳細</button></td>`;
+                        response += `</tr>`;
+                    } catch (error) {
+                        console.error(`計算${periods}期時發生錯誤:`, error);
+                    }
+                });
+                
+                response += `</table>`;
+                response += `\n💡 提示：點擊「詳細」按鈕或輸入「詳細 期數」查看完整還款計畫`;
+                
+                return response;
+            }
+            
+            // 使用上次條件重新計算
+            recalculateWithNewPeriods(newPeriods) {
+                if (!this.lastCalculation) {
+                    return {
+                        text: '沒有找到上次的試算條件，請先進行一次完整的分期試算。',
+                        confidence: 1,
+                        intent: 'no_last_calculation'
+                    };
+                }
+                
+                // 複製上次的計算條件
+                const newPlan = {
+                    ...this.lastCalculation,
+                    numberOfInstallments: newPeriods,
+                    prepaymentMonth: null // 清除提前清償月份
+                };
+                
+                // 建立提示訊息
+                let hint = `<div class="last-condition-hint">使用上次條件：金額 $${this.formatNumber(newPlan.loanAmount)}，利率 ${newPlan.annualInterestRate}%，改為 ${newPeriods} 期</div>\n\n`;
+                
+                // 執行計算
+                const result = this.calculateInstallmentPlan(newPlan);
+                
+                return {
+                    text: hint + result,
+                    confidence: 1,
+                    intent: 'recalculation_with_new_periods'
+                };
+            }
+            
+            // 顯示詳細計算結果
+            showDetailedCalculation(periods) {
+                if (!this.lastTrialCalculations || !this.lastTrialCalculations[periods]) {
+                    return {
+                        text: `沒有找到 ${periods} 期的試算資料，請先進行多期比較試算。`,
+                        confidence: 1,
+                        intent: 'no_trial_data'
+                    };
+                }
+                
+                const plan = this.lastTrialCalculations[periods];
+                const response = this.formatInstallmentResponse(plan);
+                
+                return {
+                    text: response,
+                    confidence: 1,
+                    intent: 'show_detailed_calculation'
+                };
+            }
+            
+            // 計算分期計畫
+            calculateInstallmentPlan(plan) {
+                try {
+                    // 執行核心計算
+                    this.calculateAmortization(plan);
+                    
+                    // 建立回應
+                    let response = this.formatInstallmentResponse(plan);
+                    
+                    return response;
+                } catch (error) {
+                    return `計算錯誤：${error.message}`;
+                }
+            }
+            
+            // 核心分期計算邏輯（保持原有邏輯）
+            calculateAmortization(plan) {
+                plan.amortizationSchedule = [];
+                let currentRemainingPrincipal = plan.loanAmount;
+                const monthlyRate = plan.annualInterestRate / 100 / 12;
+                let firstBillDate;
+                let overallTotalInterest = 0;
+                
+                // 確定首期帳單日期
+                if (plan.type === 'statement' || plan.type === 'interestFree') {
+                    const startBillROCYear = parseInt(plan.statementPlanStartBillROC.substring(0, 3));
+                    const startBillROCMonth = parseInt(plan.statementPlanStartBillROC.substring(3, 5));
+                    firstBillDate = new Date(startBillROCYear + 1911, startBillROCMonth - 1, 1);
+                } else {
+                    const firstPaymentStatementDate = this.rocYYYMMDDToDate(plan.firstPaymentBillDateROC);
+                    const merchantDate = this.rocYYYMMDDToDate(plan.merchantBillingDateROC);
+                    firstBillDate = new Date(firstPaymentStatementDate);
+                    while (firstBillDate <= merchantDate) {
+                        firstBillDate.setMonth(firstBillDate.getMonth() + 1);
+                    }
+                }
+                
+                let currentBillDate = new Date(firstBillDate);
+                
+                // 無息分期計算
+                if (plan.annualInterestRate === 0) {
+                    const basePrincipal = Math.floor(plan.loanAmount / plan.numberOfInstallments);
+                    const remainder = plan.loanAmount % plan.numberOfInstallments;
+                    
+                    for (let i = 1; i <= plan.numberOfInstallments; i++) {
+                        let principal = (i === 1) ? basePrincipal + remainder : basePrincipal;
+                        let interest = 0;
+                        let payment = principal;
+                        
+                        if (i === plan.numberOfInstallments && currentRemainingPrincipal !== principal) {
+                            principal = currentRemainingPrincipal;
+                            payment = principal;
+                        }
+                        
+                        if (principal > currentRemainingPrincipal) principal = currentRemainingPrincipal;
+                        
+                        const billROCYear = currentBillDate.getFullYear() - 1911;
+                        const billROCMonth = currentBillDate.getMonth() + 1;
+                        
+                        plan.amortizationSchedule.push({
+                            period: i,
+                            principal: principal,
+                            interest: interest,
+                                                        totalPayment: payment,
+                            remainingBalance: currentRemainingPrincipal - principal,
+                            billROCYearMonth: `${String(billROCYear).padStart(3, '0')}${String(billROCMonth).padStart(2, '0')}`
+                        });
+                        
+                        currentRemainingPrincipal -= principal;
+                        if (Math.abs(currentRemainingPrincipal) < 0.01) currentRemainingPrincipal = 0;
+                        currentBillDate.setMonth(currentBillDate.getMonth() + 1);
+                    }
+                } else {
+                    // 帳單分期（年金法）
+                    if (plan.type === 'statement') {
+                        const ratePowerN = Math.pow(1 + monthlyRate, plan.numberOfInstallments);
+                        const monthlyPaymentRaw = plan.loanAmount * (monthlyRate * ratePowerN) / (ratePowerN - 1);
+                        const paymentPerPeriodFixed = Math.round(monthlyPaymentRaw);
+                        
+                        for (let i = 1; i <= plan.numberOfInstallments; i++) {
+                            let interest = Math.round(currentRemainingPrincipal * monthlyRate);
+                            let principal;
+                            let payment = paymentPerPeriodFixed;
+                            
+                            if (i === plan.numberOfInstallments) {
+                                principal = currentRemainingPrincipal;
+                                payment = principal + interest;
+                            } else {
+                                principal = payment - interest;
+                            }
+                            
+                            if (principal > currentRemainingPrincipal) principal = currentRemainingPrincipal;
+                            if (principal < 0 && currentRemainingPrincipal > 0) principal = 0;
+                            
+                            overallTotalInterest += interest;
+                            
+                            const billROCYear = currentBillDate.getFullYear() - 1911;
+                            const billROCMonth = currentBillDate.getMonth() + 1;
+                            
+                            plan.amortizationSchedule.push({
+                                period: i,
+                                principal: principal,
+                                interest: interest,
+                                totalPayment: payment,
+                                remainingBalance: currentRemainingPrincipal - principal,
+                                billROCYearMonth: `${String(billROCYear).padStart(3, '0')}${String(billROCMonth).padStart(2, '0')}`
+                            });
+                            
+                            currentRemainingPrincipal -= principal;
+                            if (Math.abs(currentRemainingPrincipal) < 0.01) currentRemainingPrincipal = 0;
+                            currentBillDate.setMonth(currentBillDate.getMonth() + 1);
+                        }
+                    } else if (plan.type === 'single') {
+                        // 單筆分期（特殊首期計算）
+                        const merchantDate = this.rocYYYMMDDToDate(plan.merchantBillingDateROC);
+                        const timeDiff = firstBillDate.getTime() - merchantDate.getTime();
+                        const daysInFirstPeriod = Math.max(0, Math.round(timeDiff / (1000 * 60 * 60 * 24)));
+                        
+                        // 標準年金法計算
+                        const ratePowerN_base = Math.pow(1 + monthlyRate, plan.numberOfInstallments);
+                        let baseMonthlyPaymentRaw;
+                        if (ratePowerN_base - 1 === 0) {
+                            baseMonthlyPaymentRaw = plan.loanAmount / plan.numberOfInstallments;
+                        } else {
+                            baseMonthlyPaymentRaw = plan.loanAmount * (monthlyRate * ratePowerN_base) / (ratePowerN_base - 1);
+                        }
+                        
+                        const standardFirstMonthInterestRaw = plan.loanAmount * monthlyRate;
+                        const standardAnnuityFirstPrincipalRaw = baseMonthlyPaymentRaw - standardFirstMonthInterestRaw;
+                        
+                        // 首期計算
+                        let firstPeriodInterest = Math.round(plan.loanAmount * (plan.annualInterestRate / 100 / 365) * daysInFirstPeriod);
+                        let firstPeriodPrincipal = 0;
+                        
+                        if (plan.numberOfInstallments === 1) {
+                            firstPeriodPrincipal = plan.loanAmount;
+                        } else {
+                            const daysInBillingMonth = this.getDaysInMonth(merchantDate.getFullYear(), merchantDate.getMonth() + 1);
+                            if (daysInBillingMonth > 0 && daysInFirstPeriod >= 0 && standardAnnuityFirstPrincipalRaw !== undefined) {
+                                firstPeriodPrincipal = Math.round(standardAnnuityFirstPrincipalRaw / daysInBillingMonth * daysInFirstPeriod);
+                            }
+                        }
+                        
+                        if (firstPeriodPrincipal > plan.loanAmount) firstPeriodPrincipal = plan.loanAmount;
+                        let firstPeriodPayment = firstPeriodPrincipal + firstPeriodInterest;
+                        
+                        overallTotalInterest += firstPeriodInterest;
+                        currentRemainingPrincipal -= firstPeriodPrincipal;
+                        if (Math.abs(currentRemainingPrincipal) < 0.01) currentRemainingPrincipal = 0;
+                        
+                        const firstBillROCYear = firstBillDate.getFullYear() - 1911;
+                        const firstBillROCMonth = firstBillDate.getMonth() + 1;
+                        
+                        plan.amortizationSchedule.push({
+                            period: 1,
+                            principal: firstPeriodPrincipal,
+                            interest: firstPeriodInterest,
+                            totalPayment: firstPeriodPayment,
+                            remainingBalance: currentRemainingPrincipal,
+                            billROCYearMonth: `${String(firstBillROCYear).padStart(3, '0')}${String(firstBillROCMonth).padStart(2, '0')}`,
+                            daysInPeriod: daysInFirstPeriod
+                        });
+                        
+                        // 後續期數計算
+                        if (plan.numberOfInstallments > 1 && currentRemainingPrincipal > 0) {
+                            const remainingInstallmentsCount = plan.numberOfInstallments - 1;
+                            const ratePowerN_sub = Math.pow(1 + monthlyRate, remainingInstallmentsCount);
+                            let paymentForSubsequentPeriodsRaw;
+                            
+                            if (ratePowerN_sub - 1 === 0 || remainingInstallmentsCount === 0) {
+                                paymentForSubsequentPeriodsRaw = currentRemainingPrincipal > 0 && remainingInstallmentsCount > 0 ?
+                                    currentRemainingPrincipal / remainingInstallmentsCount : 0;
+                            } else {
+                                paymentForSubsequentPeriodsRaw = currentRemainingPrincipal * (monthlyRate * ratePowerN_sub) / (ratePowerN_sub - 1);
+                            }
+                            
+                            const paymentForSubsequentPeriodsFixed = Math.round(paymentForSubsequentPeriodsRaw);
+                            let currentSubBillDate = new Date(firstBillDate);
+                            
+                            for (let i = 2; i <= plan.numberOfInstallments; i++) {
+                                currentSubBillDate.setMonth(currentSubBillDate.getMonth() + 1);
+                                const billROCYear = currentSubBillDate.getFullYear() - 1911;
+                                const billROCMonth = currentSubBillDate.getMonth() + 1;
+                                
+                                let interest = Math.round(currentRemainingPrincipal * monthlyRate);
+                                let principal;
+                                let payment = paymentForSubsequentPeriodsFixed;
+                                
+                                if (i === plan.numberOfInstallments) {
+                                    principal = currentRemainingPrincipal;
+                                    payment = principal + interest;
+                                } else {
+                                    principal = payment - interest;
+                                }
+                                
+                                if (principal > currentRemainingPrincipal) principal = currentRemainingPrincipal;
+                                if (principal < 0 && currentRemainingPrincipal > 0) principal = 0;
+                                
+                                overallTotalInterest += interest;
+                                currentRemainingPrincipal -= principal;
+                                if (Math.abs(currentRemainingPrincipal) < 0.01) currentRemainingPrincipal = 0;
+                                if (i === plan.numberOfInstallments) currentRemainingPrincipal = 0;
+                                
+                                plan.amortizationSchedule.push({
+                                    period: i,
+                                    principal: principal,
+                                    interest: interest,
+                                    totalPayment: payment,
+                                    remainingBalance: currentRemainingPrincipal,
+                                    billROCYearMonth: `${String(billROCYear).padStart(3, '0')}${String(billROCMonth).padStart(2, '0')}`
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                // 處理最終微小差額
+                if (Math.abs(currentRemainingPrincipal) > 0.01 && plan.amortizationSchedule.length > 0) {
+                    const lastEntry = plan.amortizationSchedule[plan.amortizationSchedule.length - 1];
+                    lastEntry.principal += currentRemainingPrincipal;
+                    lastEntry.totalPayment += currentRemainingPrincipal;
+                    lastEntry.remainingBalance = 0;
+                }
+                
+                plan.totalCalculatedInterest = overallTotalInterest;
+            }
+            
+            // 格式化分期回應
+            formatInstallmentResponse(plan) {
+                let typeText = '';
+                if (plan.type === 'statement') typeText = '帳單分期';
+                else if (plan.type === 'single') typeText = '單筆分期';
+                else if (plan.type === 'interestFree') typeText = '無息分期';
+                
+                let response = `📊 ${typeText}試算結果\n`;
+                response += `本金：$${this.formatNumber(plan.loanAmount)}\n`;
+                response += `年利率：${plan.annualInterestRate}%\n`;
+                response += `期數：${plan.numberOfInstallments}期\n`;
+                
+                if (plan.type === 'single' && plan.amortizationSchedule[0]?.daysInPeriod) {
+                    response += `首期計息天數：${plan.amortizationSchedule[0].daysInPeriod}天\n`;
+                }
+                
+                response += `\n<table class="installment-table">`;
+                response += `<tr><th>期數</th><th>帳單月份</th><th>本金</th><th>利息</th><th>本期應付</th><th>剩餘本金</th></tr>`;
+                
+                plan.amortizationSchedule.forEach(inst => {
+                    response += `<tr>`;
+                    response += `<td>${inst.period}</td>`;
+                    response += `<td>${inst.billROCYearMonth}</td>`;
+                    response += `<td>$${this.formatNumber(inst.principal)}</td>`;
+                    response += `<td>$${this.formatNumber(inst.interest)}</td>`;
+                    response += `<td>$${this.formatNumber(inst.totalPayment)}</td>`;
+                    response += `<td>$${this.formatNumber(inst.remainingBalance)}</td>`;
+                    response += `</tr>`;
+                });
+                
+                response += `<tr class="total-row">`;
+                response += `<td colspan="2">合計</td>`;
+                response += `<td>$${this.formatNumber(plan.loanAmount)}</td>`;
+                response += `<td>$${this.formatNumber(plan.totalCalculatedInterest)}</td>`;
+                response += `<td>$${this.formatNumber(plan.loanAmount + plan.totalCalculatedInterest)}</td>`;
+                response += `<td>-</td>`;
+                response += `</tr>`;
+                response += `</table>`;
+                
+                response += `\n💰 總利息：$${this.formatNumber(plan.totalCalculatedInterest)}`;
+                response += `\n💵 總付款：$${this.formatNumber(plan.loanAmount + plan.totalCalculatedInterest)}`;
+                response += `\n\n💡 提示：直接輸入新的期數（如：24）即可使用相同條件重新計算`;
+                
+                return response;
+            }
+            
+            // 工具函數：民國日期轉換
+            rocYYYMMDDToDate(rocDate) {
+                const year = parseInt(rocDate.substring(0, 3)) + 1911;
+                const month = parseInt(rocDate.substring(3, 5)) - 1;
+                const day = parseInt(rocDate.substring(5, 7));
+                return new Date(year, month, day);
+            }
+            
+            // 取得該月天數
+            getDaysInMonth(year, month) {
+                return new Date(year, month, 0).getDate();
+            }
+            
+            // 格式化數字（加入千分位）
+            formatNumber(num) {
+                return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+            
+            // 儲存上次計算條件
+            saveLastCalculation(plan) {
+                this.lastCalculation = plan;
+                localStorage.setItem('lastCalculation', JSON.stringify(plan));
+                this.displayLastCalculation();
+            }
+            
+            // 載入上次計算條件
+            loadLastCalculation() {
+                const saved = localStorage.getItem('lastCalculation');
+                return saved ? JSON.parse(saved) : null;
+            }
+            
+            // 顯示上次計算條件
+            displayLastCalculation() {
+                const display = document.getElementById('lastCalculation');
+                if (this.lastCalculation) {
+                    let typeText = '';
+                    if (this.lastCalculation.type === 'statement') typeText = '帳單分期';
+                    else if (this.lastCalculation.type === 'single') typeText = '單筆分期';
+                    else if (this.lastCalculation.type === 'interestFree') typeText = '無息分期';
+                    
+                    display.innerHTML = `${typeText}<br>$${this.formatNumber(this.lastCalculation.loanAmount)} / ${this.lastCalculation.numberOfInstallments}期 / ${this.lastCalculation.annualInterestRate}%`;
+                } else {
+                    display.textContent = '尚無記錄';
+                }
+            }
+            
+            // 其他原有方法保持不變...
+            initializeBaseKnowledge() {
+                if (this.knowledge.patterns.length === 0) {
+                    const baseKnowledge = [
+                        {
+                            pattern: ['退貨', '退換', '退款', '七天'],
+                            intent: 'return_policy',
+                            response: '根據消費者保護法，您享有商品到貨七天鑑賞期（含例假日）。',
+                            confidence: 0.9,
+                            usage: 0,
+                            dataType: '基礎知識'
+                        }
+                    ];
+                    
+                    this.knowledge.patterns = baseKnowledge;
+                    this.saveKnowledge();
+                }
+            }
+            
+            async simulateThinking(startTime) {
+                const thinkingTime = Math.max(500, 1500 - (Date.now() - startTime));
+                await new Promise(resolve => setTimeout(resolve, thinkingTime));
+            }
+            
+            showThinking(show) {
+                const indicator = document.getElementById('thinkingIndicator');
+                if (show) {
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active');
+                }
+            }
+            
+            updateUI() {
+                document.getElementById('totalConversations').textContent = this.stats.totalConversations;
+                document.getElementById('knowledgeCount').textContent = this.knowledge.patterns.length;
+                
+                const categoryFilter = document.getElementById('categoryFilter');
+                categoryFilter.innerHTML = '<option value="">所有類型</option>' +
+                    '<option value="分期試算">分期試算</option>' +
+                    '<option value="基礎知識">基礎知識</option>';
+                
+                displayKnowledge();
+            }
+            
+            saveKnowledge() {
+                localStorage.setItem('enhanced_chatbot_knowledge', JSON.stringify(this.knowledge));
+            }
+            
+            loadKnowledge() {
+                const saved = localStorage.getItem('enhanced_chatbot_knowledge');
+                return saved ? JSON.parse(saved) : null;
+            }
+            
+            saveStats() {
+                localStorage.setItem('enhanced_chatbot_stats', JSON.stringify(this.stats));
+            }
+            
+            loadStats() {
+                const saved = localStorage.getItem('enhanced_chatbot_stats');
+                return saved ? JSON.parse(saved) : null;
+            }
+        }
+        
+        // ========== UI 函數 ==========
+        let chatbot = new EnhancedLearningChatbot();
+        
+        // 發送訊息
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 顯示使用者訊息
+            addMessage(message, true);
+            input.value = '';
+            
+            // 處理查詢
+            const response = await chatbot.processInput(message);
+            
+            // 顯示回應（支援HTML表格）
+            addMessage(response.text, false, response.confidence, true);
+            
+            chatbot.saveStats();
+            chatbot.updateUI();
+        }
+        
+        // 發送詳細指令
+        function sendDetailCommand(periods) {
+            const input = document.getElementById('userInput');
+            input.value = `詳細 ${periods}`;
+            sendMessage();
+        }
+        
+        // 添加訊息（支援HTML內容）
+        function addMessage(text, isUser, confidence = null, allowHtml = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = isUser ? '👤' : '🤖';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            
+            if (allowHtml && !isUser) {
+                // 允許HTML內容（用於顯示表格）
+                content.innerHTML = `<div>${text}</div>`;
+            } else {
+                // 一般文字訊息
+                const formattedText = text.replace(/\n/g, '<br>');
+                content.innerHTML = `<div>${formattedText}</div>`;
+            }
+            
+            if (!isUser && confidence !== null && confidence < 1) {
+                content.innerHTML += `<div style="font-size: 0.75rem; opacity: 0.7; margin-top: 5px;">信心度：${Math.round(confidence * 100)}%</div>`;
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            messagesDiv.appendChild(messageDiv);
+            
+            // 滾動到底部
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // 顯示分期試算說明
+        function showInstallmentGuide() {
+            const guide = chatbot.getInstallmentHelp();
+            addMessage(guide, false, 1);
+        }
+        
+        // 顯示提前清償說明
+        function showPrepaymentGuide() {
+            const guide = chatbot.getPrepaymentHelp();
+            addMessage(guide, false, 1);
+        }
+        
+        // 顯示智慧功能說明
+        function showSmartFeatures() {
+            const guide = `🎯 智慧功能說明：
+
+📌 記憶試算條件
+當您完成一次分期試算後，系統會記住您的條件。
+之後只要輸入新的期數，就能快速重新計算。
+
+範例：
+1. 先試算：帳分 50000 12/13.5 11401
+2. 想改成24期？直接輸入：24
+3. 想改成36期？直接輸入：36
+
+📌 提前清償試算
+在分期指令後加上清償月份即可。
+系統會自動計算違約金並分析是否有利。
+
+範例：
+• 單分 50000 12/13.5 1140214 1140216 11406
+• 帳分 50000 12/13.5 11401 11406
+
+📌 多筆試算功能（含詳細明細）
+可一次試算多筆不同的分期方案，並顯示每筆的詳細還款計畫。
+
+範例：
+多筆試算 1 單分 50000 12/13.5 1140102 1140116 2 帳分 50000 24/13.5 11310
+
+📌 多筆清償功能
+可一次試算多筆分期的提前清償。
+
+範例：
+11406多筆清償 1 帳分 50000 12/13.5 11401 2 單分 25000 24/13.5 1140204 1140216
+
+📌 多期比較（新格式）
+快速比較不同期數的總成本。
+
+範例：
+多期試算 帳分 50000 12/13.5 11403
+
+💡 小技巧：
+• 利率後的%符號可加可不加
+• 系統會自動儲存條件
+• 支援所有分期類型
+• 多筆清償支援多種輸入格式`;
+            
+            addMessage(guide, false, 1);
+        }
+        
+        // 顯示知識庫
+        function displayKnowledge() {
+            const filter = document.getElementById('categoryFilter').value;
+            const display = document.getElementById('knowledgeDisplay');
+            
+            let patterns = [...chatbot.knowledge.patterns];
+            
+            if (filter) {
+                patterns = patterns.filter(p => p.dataType === filter);
+            }
+            
+            patterns.sort((a, b) => b.usage - a.usage);
+            
+            const displayPatterns = patterns.slice(0, 50);
+            
+            display.innerHTML = displayPatterns.map(p => `
+                <div style="background: #f7fafc; padding: 12px; margin-bottom: 10px; border-radius: 8px; font-size: 0.875rem; border-left: 3px solid #667eea;">
+                    <strong>類型：</strong>${p.dataType || '一般'}<br>
+                    <strong>模式：</strong>${p.pattern.slice(0, 3).join(', ')}${p.pattern.length > 3 ? '...' : ''}<br>
+                    <strong>使用次數：</strong>${p.usage}<br>
+                    <strong>信心度：</strong>${Math.round(p.confidence * 100)}%
+                </div>
+            `).join('');
+            
+            if (displayPatterns.length === 0) {
+                display.innerHTML = '<div style="text-align: center; color: #718096; padding: 20px;">尚無資料</div>';
+            }
+        }
+        
+        // 處理 Enter 鍵
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // 重置學習
+        function resetLearning() {
+            if (confirm('⚠️ 確定要重置所有學習資料嗎？這個動作無法復原！')) {
+                if (confirm('⚠️ 再次確認：真的要刪除所有資料嗎？')) {
+                    localStorage.removeItem('enhanced_chatbot_knowledge');
+                    localStorage.removeItem('enhanced_chatbot_stats');
+                    localStorage.removeItem('lastCalculation');
+                    location.reload();
+                }
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            chatbot.updateUI();
+            
+            // 顯示範例提示
+            setTimeout(() => {
+                const examples = [
+                    "帳分 50000 12/13.5 11401",
+                    "單分 30000 6/12 1140515 1140620 11406",
+                    "多筆試算 1 單分 50000 12/13.5 1140102 1140116 2 帳分 50000 24/13.5 11310",
+                    "11406多筆清償 1 帳分 50000 12/13.5 11401 2 單分 25000 24/13.5 1140204 1140216"
+                ];
+                
+                const randomExample = examples[Math.floor(Math.random() * examples.length)];
+                
+                const message = `💡 提示：試試看完整的分期試算功能！
+
+範例指令：${randomExample}
+
+新功能：
+• 多筆分期試算（含詳細明細）
+• 多筆清償試算（已修正識別問題）
+• 提前清償試算（含違約金分析）
+• 智慧期數調整
+
+輸入「說明」查看完整使用方法。`;
+                
+                addMessage(message, false, 1);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>         
+          
